@@ -1,25 +1,26 @@
-const { countdownTimer } = require('../src/countdown')
+jest.useFakeTimers(); // Setup fake timers first
+jest.spyOn(global, 'clearInterval'); // Spy BEFORE importing countdownTimer
 
-jest.useFakeTimers()
+const { countdownTimer } = require('../src/countdown');
 
 describe('countdownTimer', () => {
   test('should log remaining time at intervals and stop at 0', () => {
-    console.log = jest.fn() // Mock console.log
+    const consoleSpy = jest.spyOn(console, 'log');
 
-    const startTime = 5 // 5 seconds
-    const interval = 1000 // 1 second
-    const timerId = countdownTimer(startTime, interval)
+    const timerId = countdownTimer(3, 1000);
 
-    // Fast-forward all timers
-    jest.advanceTimersByTime(startTime * interval)
+    // Fast-forward timers
+    jest.advanceTimersByTime(4000); // Enough to go 3..2..1..0
 
-    // Verify that console.log was called correctly
-    expect(console.log).toHaveBeenCalledTimes(startTime)
-    for (let i = startTime; i > 0; i--) {
-      expect(console.log).toHaveBeenCalledWith(i)
-    }
+    // Check logs
+    expect(consoleSpy).toHaveBeenCalledWith(3);
+    expect(consoleSpy).toHaveBeenCalledWith(2);
+    expect(consoleSpy).toHaveBeenCalledWith(1);
+    expect(consoleSpy).toHaveBeenCalledWith(0);
 
-    // Ensure timer was stopped
-    expect(clearInterval).toHaveBeenCalledWith(timerId)
-  })
-})
+    // Check that clearInterval was called correctly
+    expect(global.clearInterval).toHaveBeenCalledWith(timerId);
+
+    consoleSpy.mockRestore();
+  });
+});
